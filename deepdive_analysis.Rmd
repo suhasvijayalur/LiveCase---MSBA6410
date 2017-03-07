@@ -1,0 +1,290 @@
+---
+title: "DeepDive_Analysis"
+author: "Suhas Alur"
+date: "November 29, 2016"
+output: html_document
+---
+
+
+```{r, include = FALSE, message = FALSE, warning = FALSE}
+# Loading required libraries
+library(RODBC)
+library(dplyr)
+library(ggplot2)
+library(AnomalyDetection)
+library(dplyr)
+dbHandle <- odbcDriverConnect('driver={SQL Server};server=localhost;database=CSOM_MSBA_ULDATA;trusted_connection=true')
+
+```
+
+
+```{r}
+
+
+# Obtaining data for Marg Butter
+
+data_marg_butter <- sqlQuery(dbHandle, paste("SELECT [GEO],
+	   [WeekEnding],
+	   [BRAND],
+SUM([Dollars]) AS Dollars,          
+SUM([BaseDollars]) AS BaseDollars,
+SUM([Units]) AS Units,
+SUM([BaseUnits]) AS BaseUnits,
+SUM([Units_Feature]) AS UnitsFeature,
+SUM([Dollars_Feature]) AS DollarsFeature,
+SUM([Units_Display]) AS UnitsDisplay,
+SUM([Dollars_Display]) AS DollarsDisplay,
+SUM([Units_TPR]) AS UnitsDiscount,
+SUM([Dollars_TPR]) AS DollarsDiscount,
+SUM([Units_FeatAndDisp]) AS UnitsFeatAndDisp,
+SUM([Dollars_FeatAndDisp]) AS DollarsFeatAndDisp
+FROM [dbo].[t_WeeklySales]
+WHERE [Attr1] = 'MARG_BUTTER'
+  AND [WeekEnding] BETWEEN '2014-11-15' AND '2014-12-13'
+GROUP BY [GEO],
+	   [WeekEnding],
+	   [BRAND]
+"))
+
+
+```
+
+```{r}
+
+
+# Obtaining data for Marg Butter
+# Removing GEO
+data_marg_butter <- sqlQuery(dbHandle, paste("SELECT [WeekEnding],
+SUM([Units]) AS Units,
+SUM([BaseUnits]) AS BaseUnits,
+SUM([Units_Feature]) AS UnitsFeature,
+SUM([Units_Display]) AS UnitsDisplay,
+SUM([Units_TPR]) AS UnitsDiscount,
+SUM([Units_FeatAndDisp]) AS UnitsFeatAndDisp
+FROM [dbo].[t_WeeklySales]
+WHERE [Attr1] = 'MARG_BUTTER'
+  AND [WeekEnding] BETWEEN '2014-11-15' AND '2014-12-13'
+GROUP BY
+	   [WeekEnding]
+	   
+"))
+
+
+```
+
+```{r}
+
+# Changing column names
+
+colnames(data_marg_butter) <- c("retailer", "week_ending", "brand", "dollars", "base_dollars", "units","base_units", "units_feature", "dollars_feature","units_display", "dollars_display", "units_discount", "dollars_discount", "units_feat_disp", "dollars_feat_disp")
+
+data_marg_butter$week_ending <- as.Date(data_marg_butter$week_ending)
+
+```
+
+
+```{r}
+
+# Understand which retailer has the highest sales
+top_selling_retailers <-  group_by(data_marg_butter,retailer) %>% mutate(sales = sum(units)) %>% select(retailer,sales) %>% filter(row_number(sales) == 1) %>% arrange(desc(sales))
+
+```
+
+
+```{r}
+
+# Understand top selling brand
+top_selling_brand <-  group_by(data_marg_butter,brand) %>% mutate(sales = sum(units)) %>% select(brand,sales) %>% filter(row_number(sales) == 1) %>% arrange(desc(sales))
+
+```
+
+
+```{r}
+
+# Understand top selling week
+top_selling_week <-  group_by(data_marg_butter,week_ending) %>% mutate(sales = sum(units)) %>% select(week_ending,sales) %>% filter(row_number(sales) == 1) %>% arrange(desc(sales))
+
+```
+
+
+```{r}
+
+# Understanding the trend of sales across brands
+
+sales_trend_across_brand <-  group_by(data_marg_butter,brand, week_ending) %>% mutate(sales = sum(units)) %>% select(brand, week_ending,sales) %>% filter(row_number(sales) == 1) %>% arrange(desc(sales))
+
+sales_share_per_week <- group_by(sales_trend_across_brand,week_ending) %>% mutate(percent = (sales/sum(sales)*100))
+
+
+```
+
+
+
+```{r}
+
+private_label <- sales_share_per_week[sales_share_per_week$brand=='PRIVATE LABEL',]
+
+# Plot the attributes difference across time
+ggplot(private_label,aes(x=week_ending,y=percent)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  labs(title = 'Marg Butter')
+```
+
+
+
+```{r}
+
+brands <- c("PRIVATE LABEL","LAND O LAKES","COUNTRY CROCK","BLUE BONNET")
+
+brand_shares <- sales_share_per_week[sales_share_per_week$brand %in% brands,]
+
+
+# Plot the attributes difference across time
+ggplot(brand_shares,aes(x=week_ending,y=percent,color=brand_shares$brand,group=brand_shares$brand)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  labs(title = 'Marg Butter')
+
+
+```
+
+
+
+```{r}
+
+dates <- c('2015-03-14', '2015-03-21', '2015-04-04','2015-03-28','2015-04-11','2016-03-26')
+dates <- as.Date(dates)
+
+filtered_retailers <- c("ACME", "AHOLD", "ALB-CENSUS", "BIG Y", "BILO", "BJS", "CUB", "CVS", "DEMOULAS", "DOLLAR GENERAL", "FAMILY DOLLAR", "FARM FRESH", "FOOD LION", "FOOD4LESS", "FRED MEYER", "GIANT EAGLE", "GIANT-MD", "GIANT-CAR", "HANNAFORD", "HARRIS TEETER", "HY VEE", "JEWEL", "KMART", "KROGER EX HT", "MEIJER", "PRICE CHOPPER", "PUBLIX", "RALEYS", "RITE AID", "SAFEWAY-CENSUS", "SAMS", "SHAWS", "SHOPPERS", "STATER BROS", "STOP & SHOP-NY", "STOP & SHOP-NE", "TARGET", "US-DRUG", "US-FOOD", "WAKEFERN", "WALGREENS", "WALMART", "WEGMANS", "WEIS", "WINCO", "WINN DIXIE")
+
+
+land_olakes_deep_dive <- data_marg_butter %>% filter(brand %in% c('LAND O LAKES','COUNTRY CROCK')) %>% filter(week_ending %in% dates) %>% filter(retailer %in% filtered_retailers)
+
+```
+
+
+
+
+```{r}
+
+
+# Obtaining data for PKGD ICE CREAM
+
+data_icecream <- sqlQuery(dbHandle, paste("SELECT [GEO],
+	   [WeekEnding],
+	   [BRAND],
+SUM([Dollars]) AS Dollars,          
+SUM([BaseDollars]) AS BaseDollars,
+SUM([Units]) AS Units,
+SUM([BaseUnits]) AS BaseUnits,
+SUM([Units_Feature]) AS UnitsFeature,
+SUM([Dollars_Feature]) AS DollarsFeature,
+SUM([Units_Display]) AS UnitsDisplay,
+SUM([Dollars_Display]) AS DollarsDisplay,
+SUM([Units_TPR]) AS UnitsDiscount,
+SUM([Dollars_TPR]) AS DollarsDiscount,
+SUM([Units_FeatAndDisp]) AS UnitsFeatAndDisp,
+SUM([Dollars_FeatAndDisp]) AS DollarsFeatAndDisp
+FROM [dbo].[t_WeeklySales]
+WHERE [Attr1] = 'PKGD ICE CREAM'
+GROUP BY [GEO],
+	   [WeekEnding],
+	   [BRAND]
+"))
+
+
+```
+
+
+```{r}
+
+# Changing column names
+
+colnames(data_icecream) <- c("retailer", "week_ending", "brand", "dollars", "base_dollars", "units","base_units", "units_feature", "dollars_feature","units_display", "dollars_display", "units_discount", "dollars_discount", "units_feat_disp", "dollars_feat_disp")
+
+data_icecream$week_ending <- as.Date(data_icecream$week_ending)
+
+```
+
+
+```{r}
+
+# Understand which retailer has the highest sales
+top_selling_retailers_icecream <-  group_by(data_icecream,retailer) %>% mutate(sales = sum(units)) %>% select(retailer,sales) %>% filter(row_number(sales) == 1) %>% arrange(desc(sales))
+
+```
+
+
+```{r}
+
+# Understand top selling brand
+top_selling_brand_icecream <-  group_by(data_icecream,brand) %>% mutate(sales = sum(units)) %>% select(brand,sales) %>% filter(row_number(sales) == 1) %>% arrange(desc(sales))
+
+```
+
+
+```{r}
+
+# Understand top selling week
+top_selling_week_icecream <-  group_by(data_icecream,week_ending) %>% mutate(sales = sum(units)) %>% select(week_ending,sales) %>% filter(row_number(sales) == 1) %>% arrange(desc(sales))
+
+```
+
+
+
+```{r}
+
+# Understanding the trend of sales across brands
+
+sales_trend_across_brand_icecream <-  group_by(data_icecream,brand, week_ending) %>% mutate(sales = sum(units)) %>% select(brand, week_ending,sales) %>% filter(row_number(sales) == 1) %>% arrange(desc(sales))
+
+sales_share_per_week_icecream <- group_by(sales_trend_across_brand_icecream,week_ending) %>% mutate(percent = (sales/sum(sales)*100))
+
+
+```
+
+```{r}
+
+breyers_details <- sales_share_per_week_icecream %>% filter(brand == 'BREYERS')
+
+
+```
+
+
+ 
+```{r}
+
+# Understanding what is driving the sales for Breyers
+
+filter_dates <- c('2016-05-21','2015-05-23','2015-01-03','2016-05-14','2016-05-28')
+filter_dates <- as.Date(filter_dates)
+
+breyers_details <- data_icecream %>% filter(brand == 'BREYERS') %>% filter(week_ending %in% filter_dates)
+
+
+```
+
+
+
+```{r}
+
+brands <- c("PRIVATE LABEL","BREYERS","DREYERS_EDYS","HAAGEN DAZS","BEN & JERRYS","TURKEY HILL")
+
+brand_shares_icecream <- sales_share_per_week_icecream[sales_share_per_week_icecream$brand %in% brands,]
+
+
+# Plot the attributes difference across time
+ggplot(brand_shares_icecream,aes(x=week_ending,y=percent,color=brand_shares_icecream$brand,group=brand_shares_icecream$brand)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  labs(title = 'Package Ice Cream')
+
+```
+
+
+
+

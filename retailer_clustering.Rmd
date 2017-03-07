@@ -1,0 +1,88 @@
+---
+title: "Retailer_Clustering"
+author: "Suhas Alur"
+date: "December 3, 2016"
+output: html_document
+---
+
+
+```{r, include = FALSE, message = FALSE, warning = FALSE}
+# Loading required libraries
+library(RODBC)
+library(dplyr)
+library(ggplot2)
+library(AnomalyDetection)
+library(dplyr)
+dbHandle <- odbcDriverConnect('driver={SQL Server};server=localhost;database=CSOM_MSBA_ULDATA;trusted_connection=true')
+
+```
+
+
+
+```{r}
+
+# Obtaining data for retailer and all its item descriptions
+retailer_item_description <- sqlQuery(dbHandle, paste("SELECT [GEO],
+[Description]
+FROM [dbo].[t_WeeklySales]
+GROUP BY [GEO],
+[Description]"))
+
+
+```
+
+
+
+```{r}
+
+# Here are the documentation for packages used in this code:
+#https://cran.r-project.org/web/packages/tm/tm.pdf
+library(tm)
+#https://cran.r-project.org/web/packages/topicmodels/topicmodels.pdf
+library(topicmodels)
+
+# Use the SnowballC package to do stemming.
+library(SnowballC) 
+
+```
+
+
+```{r}
+
+test <- data.frame(retailer_item_description$Description)
+
+```
+
+
+
+```{r}
+
+#dirname <- file.path(getwd(),"organic_text")
+docs <- Corpus(DirSource(test, encoding = "UTF-8"))
+
+# The following steps pre-process the raw text documents. 
+# Remove punctuations and numbers because they are generally uninformative. 
+docs <- tm_map(docs, removePunctuation)
+docs <- tm_map(docs, removeNumbers)
+
+# Convert all words to lowercase. 
+docs <- tm_map(docs, content_transformer(tolower))
+
+# Remove stopwords such as "a", "the", etc. 
+docs <- tm_map(docs, removeWords, stopwords("english"))
+
+# Use the SnowballC package to do stemming. 
+docs <- tm_map(docs, stemDocument)
+
+# Remove excess white spaces between words. 
+docs <- tm_map(docs, stripWhitespace)
+
+# You can inspect the first document to see what it looks like with 
+#docs[[1]]$content
+
+# Convert all documents to a term frequency matrix. 
+tfm <- DocumentTermMatrix(docs)
+
+
+```
+
