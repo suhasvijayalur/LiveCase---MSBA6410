@@ -1,0 +1,957 @@
+---
+title: "Anomaly_detection"
+author: "Suhas Alur"
+date: "November 28, 2016"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+```{r, include = FALSE, message = FALSE, warning = FALSE}
+# Loading required libraries
+library(RODBC)
+library(dplyr)
+library(ggplot2)
+library(AnomalyDetection)
+library(dplyr)
+dbHandle <- odbcDriverConnect('driver={SQL Server};server=localhost;database=CSOM_MSBA_ULDATA;trusted_connection=true')
+
+```
+
+
+
+```{r}
+
+# Data to observe the trend of attribute1 across time
+
+data <- sqlQuery(dbHandle, paste("SELECT Attr1, WeekEnding, SUM(Units) AS Units, SUM(BaseUnits) AS Base_Units FROM t_WeeklySales GROUP BY Attr1,WeekEnding"))
+
+```
+
+
+```{r}
+# Changing the column names for easier access
+colnames(data) <- c("attribute", "week_ending", "units", "base_units")
+
+# Changing the date format
+#data$week_ending <- as.POSIXct(data$week_ending)
+
+```
+
+
+
+```{r}
+
+# Store backup, just in case something goes wrong
+backup <- data 
+
+```
+
+
+
+```{r}
+
+# Calculating the difference in the number of units sold vs what was expected
+data$diff <- round(((data$units - data$base_units)/data$base_units)*100, 2)
+
+```
+
+```{r}
+data$week_ending <- as.Date(data$week_ending)
+
+```
+
+
+
+```{r}
+
+# Plot the attributes difference across time
+ggplot(data,aes(x=week_ending,y=diff,colour=data$attribute,group=data$attribute)) +
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 5), axis.title =  element_text(size = 16)) +
+  scale_x_date(date_breaks = "month")
+  
+
+
+```
+
+
+**From the above plot it can be observed that Marg_Butter is seen to have unusual spike in actual units sold versus the base units expected to be sold. This is worth looking into**
+
+
+
+
+
+
+
+
+```{r}
+
+data_subset_butter <- data[data$attribute == 'MARG_BUTTER',]
+data_subset_butter$week_ending <- as.Date(data_subset_butter$week_ending)
+
+# Plot the attributes difference across time
+ggplot(data_subset_butter,aes(x=week_ending,y=diff)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  labs(title = 'Marg Butter')
+
+
+```
+
+
+
+
+
+```{r}
+
+data_subset_facecare <- data[data$attribute == 'FACE CARE',]
+data_subset_facecare$week_ending <- as.Date(data_subset_facecare$week_ending)
+
+# Plot the attributes difference across time
+ggplot(data_subset_facecare,aes(x=week_ending,y=diff)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  labs(title = 'Face Care')
+
+```
+
+
+```{r}
+
+data_subset_icecream <- data[data$attribute == 'PKGD ICE CREAM',]
+data_subset_icecream$week_ending <- as.Date(data_subset_icecream$week_ending)
+
+# Plot the attributes difference across time
+ggplot(data_subset_icecream,aes(x=week_ending,y=diff)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  labs(title = 'ICE CREAM')
+
+```
+
+
+
+```{r}
+
+data_subset_spoonables <- data[data$attribute == 'SPOONABLES',]
+data_subset_spoonables$week_ending <- as.Date(data_subset_spoonables$week_ending)
+
+# Plot the attributes difference across time
+ggplot(data_subset_spoonables,aes(x=week_ending,y=diff)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  labs(title = 'Spoonables')
+
+
+```
+
+
+```{r}
+
+data_subset_haircare <- data[data$attribute == 'GEN HAIRCARE',]
+data_subset_haircare$week_ending <- as.Date(data_subset_haircare$week_ending)
+
+# Plot the attributes difference across time
+ggplot(data_subset_haircare,aes(x=week_ending,y=diff)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  labs(title = 'Gen Haircare')
+
+
+```
+
+
+
+```{r}
+
+data_subset_deodarant <- data[data$attribute == 'DEODORANT',]
+data_subset_deodarant$week_ending <- as.Date(data_subset_deodarant$week_ending)
+
+# Plot the attributes difference across time
+ggplot(data_subset_deodarant,aes(x=week_ending,y=diff)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  labs(title = 'Deodarant')
+
+
+```
+
+
+
+```{r}
+
+data_subset_cotton <- data[data$attribute == 'COTTON',]
+data_subset_cotton$week_ending <- as.Date(data_subset_cotton$week_ending)
+
+# Plot the attributes difference across time
+ggplot(data_subset_cotton,aes(x=week_ending,y=diff)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  labs(title = 'Cotton')
+
+
+```
+
+
+
+```{r}
+
+data_subset_novelties <- data[data$attribute == 'NOVELTIES',]
+data_subset_novelties$week_ending <- as.Date(data_subset_novelties$week_ending)
+
+# Plot the attributes difference across time
+ggplot(data_subset_novelties,aes(x=week_ending,y=diff)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  labs(title = 'Novelties')
+
+
+```
+
+
+
+```{r}
+
+data_subset_tea <- data[data$attribute == 'TEA',]
+data_subset_tea$week_ending <- as.Date(data_subset_tea$week_ending)
+
+# Plot the attributes difference across time
+ggplot(data_subset_tea,aes(x=week_ending,y=diff)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  labs(title = 'Tea')
+
+```
+
+
+```{r}
+
+data_subset_handandbody <- data[data$attribute == 'HAND & BODY',]
+data_subset_handandbody$week_ending <- as.Date(data_subset_handandbody$week_ending)
+
+# Plot the attributes difference across time
+ggplot(data_subset_handandbody,aes(x=week_ending,y=diff)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  labs(title = 'Hand & Body')
+
+
+```
+
+
+```{r}
+
+data_subset_personal_wash <- data[data$attribute == 'PERSONAL WASH',]
+data_subset_personal_wash$week_ending <- as.Date(data_subset_personal_wash$week_ending)
+
+# Plot the attributes difference across time
+ggplot(data_subset_personal_wash,aes(x=week_ending,y=diff)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  labs(title = 'Personal Wash')
+
+
+```
+
+
+#####=======================================================================================
+##### Anomaly Detection
+#####=======================================================================================
+
+
+
+
+
+```{r}
+
+
+# Subsetting the data to include only Marg_Butter data
+marg_butter <- data[data$attribute == 'MARG_BUTTER',]
+marg_butter_req <- marg_butter[,c(2,5)]
+
+marg_butter_req$week_ending <- as.numeric(as.POSIXct(marg_butter_req$week_ending))
+AnomalyDetectionTs(marg_butter_req, max_anoms=0.05, direction='both', plot=TRUE) #period = 7)
+
+# Plotting the anomalies points
+#res$plot
+
+```
+
+
+
+```{r}
+# Subsetting the data to include only Spoonable data
+spoonable <- data[data$attribute == 'SPOONABLES',]
+spoonable_req <- spoonable[,c(2,5)]
+
+spoonable_req$week_ending <- as.numeric(as.POSIXct(spoonable_req$week_ending))
+res = AnomalyDetectionTs(spoonable_req, max_anoms=0.05, direction='both', plot=TRUE)
+
+# Plotting the anomalies points
+res$plot
+
+```
+
+
+
+```{r}
+
+# Subsetting the data to include only face care data
+face_care <- data[data$attribute == 'FACE CARE',]
+face_care_req <- face_care[,c(2,5)]
+
+face_care_req$week_ending <- as.numeric(as.POSIXct(face_care_req$week_ending))
+res = AnomalyDetectionTs(face_care_req, max_anoms=0.05, direction='both', plot=TRUE)
+
+# Plotting the anomalies points
+res$plot
+
+```
+
+
+```{r}
+
+# Subsetting the data to include only deodorant data
+deodorant <- data[data$attribute == 'DEODORANT',]
+deodorant_req <- deodorant[,c(2,5)]
+
+deodorant_req$week_ending <- as.numeric(as.POSIXct(deodorant_req$week_ending))
+res = AnomalyDetectionTs(deodorant_req, max_anoms=0.05, direction='both', plot=TRUE)
+
+# Plotting the anomalies points
+res$plot
+
+```
+
+
+```{r}
+
+# Subsetting the data to include only ice cream data
+ice_cream <- data[data$attribute == 'PKGD ICE CREAM',]
+ice_cream_req <- ice_cream[,c(2,5)]
+
+ice_cream_req$week_ending <- as.numeric(as.POSIXct(ice_cream_req$week_ending))
+res = AnomalyDetectionTs(ice_cream_req, max_anoms=0.05, direction='both', plot=TRUE)
+
+# Plotting the anomalies points
+res$plot
+
+```
+
+
+```{r}
+
+# Subsetting the data to include only cotton data
+cotton <- data[data$attribute == 'COTTON',]
+cotton_req <- cotton[,c(2,5)]
+
+cotton_req$week_ending <- as.numeric(as.POSIXct(cotton_req$week_ending))
+res = AnomalyDetectionTs(cotton_req, max_anoms=0.05, direction='both', plot=TRUE)
+
+# Plotting the anomalies points
+res$plot
+
+```
+    
+
+```{r}
+
+# Subsetting the data to include only novelties data
+novelties <- data[data$attribute == 'NOVELTIES',]
+novelties_req <- novelties[,c(2,5)]
+
+novelties_req$week_ending <- as.numeric(as.POSIXct(novelties_req$week_ending))
+res = AnomalyDetectionTs(novelties_req, max_anoms=0.05, direction='both', plot=TRUE)
+
+# Plotting the anomalies points
+res$plot
+
+```
+
+
+```{r}
+
+# Subsetting the data to include only tea data
+tea <- data[data$attribute == 'TEA',]
+tea_req <- novelties[,c(2,5)]
+
+tea_req$week_ending <- as.numeric(as.POSIXct(tea_req$week_ending))
+res = AnomalyDetectionTs(tea_req, max_anoms=0.05, direction='both', plot=TRUE)
+
+# Plotting the anomalies points
+res$plot
+
+```
+
+    
+
+```{r}
+
+# Subsetting the data to include only haircare data
+haircare <- data[data$attribute == 'GEN HAIRCARE',]
+haircare_req <- haircare[,c(2,5)]
+
+haircare_req$week_ending <- as.numeric(as.POSIXct(haircare_req$week_ending))
+res = AnomalyDetectionTs(haircare_req, max_anoms=0.05, direction='both', plot=TRUE)
+
+# Plotting the anomalies points
+res$plot
+
+```
+
+
+```{r}
+
+# Subsetting the data to include only hand and body data
+hand_and_body <- data[data$attribute == 'HAND & BODY',]
+hand_and_body_req <- hand_and_body[,c(2,5)]
+
+hand_and_body_req$week_ending <- as.numeric(as.POSIXct(hand_and_body_req$week_ending))
+#res = AnomalyDetectionTs(hand_and_body_req, max_anoms=0.05, direction='both', plot=TRUE)
+AnomalyDetectionTs(hand_and_body_req, max_anoms=0.05, direction='both', plot=TRUE) #period = 7)
+
+# Plotting the anomalies points
+#res$plot
+
+```
+
+
+```{r}
+
+# Subsetting the data to include only personal wash data
+personal_wash <- data[data$attribute == 'PERSONAL WASH',]
+personal_wash_req <- personal_wash[,c(2,5)]
+
+personal_wash_req$week_ending <- as.numeric(as.POSIXct(personal_wash_req$week_ending))
+res = AnomalyDetectionTs(personal_wash_req, max_anoms=0.05, direction='both', plot=TRUE)
+
+# Plotting the anomalies points
+res$plot
+
+```
+
+
+
+
+```{r}
+
+# Looking at the data at store level
+store_data <- sqlQuery(dbHandle, paste("SELECT GEO,
+	   [WeekEnding],
+       SUM([Units]) AS Units,
+	   SUM([BaseUnits]) AS BaseUnits,
+	   SUM([Dollars]) AS Dollars,
+	   SUM([BaseDollars]) AS BaseDollars
+FROM [dbo].[t_WeeklySales]
+WHERE RIGHT([GEO],7) != 'REM MKT'
+AND [GEO] != 'MDC+M'
+GROUP BY GEO,
+   	     [WeekEnding]"))
+
+
+```
+
+
+```{r}
+
+# Changing the column names for easier access
+colnames(store_data) <- c("retailer", "week_ending", "units", "base_units","dollars", "base_dollars" )
+
+# Changing the date format
+store_data$week_ending <- as.POSIXct(store_data$week_ending)
+
+```
+
+
+```{r}
+
+filtered_retailers <- c("ACME", "AHOLD", "ALB-CENSUS", "BIG Y", "BILO", "BJS", "CUB", "CVS", "DEMOULAS", "DOLLAR GENERAL", "FAMILY DOLLAR", "FARM FRESH", "FOOD LION", "FOOD4LESS", "FRED MEYER", "GIANT EAGLE", "GIANT-MD", "GIANT-CAR", "HANNAFORD", "HARRIS TEETER", "HY VEE", "JEWEL", "KMART", "KROGER EX HT", "MEIJER", "PRICE CHOPPER", "PUBLIX", "RALEYS", "RITE AID", "SAFEWAY-CENSUS", "SAMS", "SHAWS", "SHOPPERS", "STATER BROS", "STOP & SHOP-NY", "STOP & SHOP-NE", "TARGET", "US-DRUG", "US-FOOD", "WAKEFERN", "WALGREENS", "WALMART", "WEGMANS", "WEIS", "WINCO", "WINN DIXIE")
+store_data <- store_data[store_data$retailer %in% filtered_retailers, ]
+
+
+```
+
+
+
+```{r}
+
+# Calculating the difference in the number of units sold vs what was expected
+store_data$diff <- round(((store_data$units - store_data$base_units)/store_data$base_units)*100, 2)
+
+```
+
+
+
+
+```{r}
+
+# Overall trend
+
+subset_data <- store_data %>% filter(diff > 100)
+subset_data$week_ending <- as.Date(subset_data$week_ending)
+
+
+# Ploting the store sales across time
+ggplot(subset_data,aes(x=week_ending,y=diff, color=subset_data$retailer, group=subset_data$retailer)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%B-%Y")
+
+
+```
+
+
+
+```{r}
+
+overall_retailer_data <- sqlQuery(dbHandle, paste("SELECT [GEO],
+	   [WeekEnding],
+	   [BRAND],
+SUM([Dollars]) AS Dollars,          
+SUM([BaseDollars]) AS BaseDollars,
+SUM([Units]) AS Units,
+SUM([BaseUnits]) AS BaseUnits,
+SUM([Units_Feature]) AS UnitsFeature,
+SUM([Dollars_Feature]) AS DollarsFeature,
+SUM([Units_Display]) AS UnitsDisplay,
+SUM([Dollars_Display]) AS DollarsDisplay,
+SUM([Units_TPR]) AS UnitsDiscount,
+SUM([Dollars_TPR]) AS DollarsDiscount,
+SUM([Units_FeatAndDisp]) AS UnitsFeatAndDisp,
+SUM([Dollars_FeatAndDisp]) AS DollarsFeatAndDisp
+FROM [dbo].[t_WeeklySales]
+GROUP BY [GEO],
+	   [WeekEnding],
+	   [BRAND]
+"))
+
+
+
+```
+
+
+
+```{r}
+
+# Changing column names
+
+colnames(overall_retailer_data) <- c("retailer", "week_ending", "brand", "dollars", "base_dollars", "units","base_units", "units_feature", "dollars_feature","units_display", "dollars_display", "units_discount", "dollars_discount", "units_feat_disp", "dollars_feat_disp")
+
+overall_retailer_data$week_ending <- as.Date(overall_retailer_data$week_ending)
+
+
+```
+
+
+
+
+
+```{r}
+
+# Filtering for only the Big Y data
+bigy_data <- overall_retailer_data %>% filter(retailer == 'BIG Y')
+
+
+```
+
+
+
+```{r}
+
+# Filtering for only the Wakefern data
+wakefern_data <- overall_retailer_data %>% filter(retailer == 'WAKEFERN')
+
+
+```
+
+
+```{r}
+
+# Preparing brand data for clustering
+brand_data <- overall_retailer_data %>% 
+  select(brand, units, units_feature,units_display, units_discount,units_feat_disp) %>% 
+  group_by(brand) %>% 
+  summarise(units= sum(units), units_feature = sum(units_feature), units_display = sum(units_display), units_discount = sum(units_discount), units_feat_disp = sum(units_feat_disp))
+
+#%>%  
+#  mutate(weeknum = as.numeric(format(week_ending+3, "%U"))) %>%
+#  select(-(week_ending))
+
+```
+
+
+```{r}
+# Normalizing the data
+#brand_data[,c(2:7)] <- lapply(brand_data[,c(2:7)], function(x) (x-min(x))/(max(x)-min(x)))
+
+brand_data[,c(2:6)] <- scale(brand_data[,c(2:6)])
+```
+
+
+```{r}
+
+# Determine number of clusters
+wssplot <- function(brand_data, nc=15, seed=1234)
+  {
+  wss <- (nrow(brand_data)-1)*sum(apply(brand_data,2,var))
+  for (i in 2:nc)
+    {
+    set.seed(seed)
+    wss[i] <- sum(kmeans(brand_data, centers=i,iter.max=30)$withinss)
+    }
+  plot(1:nc, wss, type="b", xlab="Number of Clusters",ylab="Within groups sum of squares")
+  }
+
+wssplot(brand_data[,c(2:6)])
+
+```
+
+
+```{r}
+
+# Clustering the brand data
+set.seed(1234)
+fit.km <- kmeans(brand_data[,c(2:6)], 7, nstart=20)
+fit.km$size
+brand_data$cluster <- fit.km$cluster
+
+```
+
+
+```{r}
+
+# Plot results
+plot(brand_data, col =(fit.km$cluster +1) , main="K-Means result with 2 clusters", pch=20, cex=2)
+
+
+```
+
+
+```{r}
+
+brand_data$cluster <- fit.km$cluster
+
+```
+
+
+```{r}
+
+cluster_1 <- brand_data[brand_data$cluster == 1,]
+plot(density(cluster_1$units))
+
+```
+
+
+```{r}
+
+cluster_2 <- brand_data[brand_data$cluster == 2,]
+plot(density(cluster_2$units))
+
+```
+
+
+```{r}
+
+cluster_4 <- brand_data[brand_data$cluster == 4,]
+plot(density(cluster_4$units))
+
+```
+
+
+```{r}
+
+cluster_5 <- brand_data[brand_data$cluster == 5,]
+plot(density(cluster_5$units))
+
+```
+
+
+```{r}
+
+cluster_7 <- brand_data[brand_data$cluster == 7,]
+plot(density(cluster_7$units))
+
+```
+
+
+
+```{r}
+
+# Target trend
+
+target_store <- store_data[store_data$retailer == 'TARGET',]
+
+# Ploting the store sales across time
+ggplot(target_store,aes(x=week_ending,y=diff)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 5))
+
+
+```
+
+**We observe two drops in Target percentage difference**
+
+
+
+```{r}
+
+# Walmart trend
+
+walmart_store <- store_data[store_data$retailer == 'WALMART',]
+
+# Ploting the store sales across time
+ggplot(walmart_store,aes(x=week_ending,y=diff)) + 
+         geom_line() + 
+         xlab('Time') + 
+         ylab('Percentage Difference') + 
+         theme(axis.text.x = element_text(angle = 90, hjust = 5))
+
+
+```
+
+
+
+```{r}
+
+# K-Mart trend
+
+kmart_store <- store_data[store_data$store == 'KMART REM MKT',]
+
+# Ploting the store sales across time
+ggplot(kmart_store,aes(x=week_ending,y=diff,colour=kmart_store$store,group=kmart_store$store)) + geom_line() + xlab('Time') + ylab('Percentage Difference') + theme(axis.text.x = element_text(angle = 90, hjust = 5))
+
+
+```
+
+
+**The overall store difference trend is driven by k-mart**
+
+
+
+```{r}
+
+# MDC+M trend
+
+mdcm_store <- store_data[store_data$store == 'MDC+M',]
+
+# Ploting the store sales across time
+ggplot(mdcm_store,aes(x=week_ending,y=diff,colour=mdcm_store$store,group=mdcm_store$store)) + geom_line() + xlab('Time') + ylab('Percentage Difference') + theme(axis.text.x = element_text(angle = 90, hjust = 5))
+
+
+```
+
+
+
+```{r}
+
+# US-FOOD trend
+
+usfood_store <- store_data[store_data$store == 'US-FOOD',]
+
+# Ploting the store sales across time
+ggplot(usfood_store,aes(x=week_ending,y=diff,colour=usfood_store$store,group=usfood_store$store)) + geom_line() + xlab('Time') + ylab('Percentage Difference') + theme(axis.text.x = element_text(angle = 90, hjust = 5))
+
+
+```
+
+
+
+		 
+```{r}
+
+# Let us look at what factors might be driving the fluctuations that we observed
+attribute_discount_data <- sqlQuery(dbHandle, paste("SELECT [Attr1],
+	   [WeekEnding],
+	   SUM([Units_Feature]) AS Units_Feature,
+	   SUM([Dollars_Feature]) AS Dollars_Feature,
+	   SUM([Units_Display]) AS Units_Display,
+	   SUM([Dollars_Display]) AS Dollars_Display,
+	   SUM([Units_TPR]) AS Units_Discount,
+	   SUM([Dollars_TPR]) AS Dollars_Discount,
+	   SUM([Units_FeatAndDisp]) AS Units_FeatAndDisp,
+	   SUM([Dollars_FeatAndDisp]) AS Dollars_FeatAndDisp
+FROM [dbo].[t_WeeklySales]
+GROUP BY [Attr1],
+		 [WeekEnding]	
+		 "))
+
+
+```
+
+
+```{r}
+
+# Changing the column names for easier access
+colnames(attribute_discount_data) <- c("attribute", "week_ending", "units_feature", "dollars_feature","units_display", "dollars_display", "units_discount", "dollars_discount", "units_feat_disp", "dollars_discount")
+
+# Changing the date format
+attribute_discount_data$week_ending <- as.POSIXct(attribute_discount_data$week_ending)
+
+```
+
+
+
+```{r}
+
+# Marg Butter discounts
+
+marg_butter_discount <- attribute_discount_data[attribute_discount_data$attribute == 'MARG_BUTTER',]
+
+# Ploting the store sales across time
+ggplot(marg_butter_discount,aes(x=week_ending)) + 
+  geom_line(aes(y = units_feature), color = "blue") + 
+  geom_line(aes(y = units_display), color = "red") + 
+  geom_line(aes(y = units_discount), color = "black") + 
+  geom_line(aes(y = units_feat_disp), color = "green") + 
+  xlab('Time') + 
+  ylab('# of Units') + 
+#  scale_fill_continuous(guide = "legend") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 5))
+
+
+```
+
+
+
+
+
+```{r}
+
+# Spoonables discounts
+
+spoonables_discount <- attribute_discount_data[attribute_discount_data$attribute == 'SPOONABLES',]
+
+# Ploting the store sales across time
+ggplot(spoonables_discount,aes(x=week_ending)) + 
+  geom_line(aes(y = units_feature), color = "blue") + 
+  geom_line(aes(y = units_display), color = "red") + 
+  geom_line(aes(y = units_discount), color = "black") + 
+  geom_line(aes(y = units_feat_disp), color = "green") + 
+  xlab('Time') + 
+  ylab('# of Units') + 
+#  scale_fill_continuous(guide = "legend") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 5))
+
+
+```
+
+
+
+```{r}
+
+# Spoonables discounts
+
+ice_cream_discount <- attribute_discount_data[attribute_discount_data$attribute == 'PKGD ICE CREAM',]
+
+# Ploting the store sales across time
+ggplot(ice_cream_discount,aes(x=week_ending)) + 
+  geom_line(aes(y = units_feature), color = "blue") + 
+  geom_line(aes(y = units_display), color = "red") + 
+  geom_line(aes(y = units_discount), color = "black") + 
+  geom_line(aes(y = units_feat_disp), color = "green") + 
+  xlab('Time') + 
+  ylab('# of Units') + 
+#  scale_fill_continuous(guide = "legend") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 5))
+
+
+```
+
+
+```{r}
+
+# Novelties discounts
+
+novelties_discount <- attribute_discount_data[attribute_discount_data$attribute == 'NOVELTIES',]
+
+# Ploting the store sales across time
+ggplot(novelties_discount,aes(x=week_ending)) + 
+  geom_line(aes(y = units_feature), color = "blue") + 
+  geom_line(aes(y = units_display), color = "red") + 
+  geom_line(aes(y = units_discount), color = "black") + 
+  geom_line(aes(y = units_feat_disp), color = "green") + 
+  xlab('Time') + 
+  ylab('# of Units') + 
+#  scale_fill_continuous(guide = "legend") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 5))
+
+```
+
+
+```{r}
+
+# Looking at stores that sell Marg Butter
+store_items <- sqlQuery(dbHandle, paste("SELECT [GEO],
+	   [Attr1],
+	   SUM([Units]) AS Units_Sold
+FROM [dbo].[t_WeeklySales]
+WHERE RIGHT([GEO],7) != 'REM MKT'
+AND [GEO] != 'MDC+M'
+GROUP BY [GEO],
+   	     [Attr1]"))
+
+```
+
+
+```{r}
+
+colnames(store_items) <- c("store", "attribute","units_sold")
+
+```
+
+
+
+```{r}
+
+library(dplyr)
+percentage_share_items <- group_by(store_items, attribute) %>% mutate(percent = (units_sold/sum(units_sold)*100))
+
+```
+
+
+```{r}
+
+write.csv(percentage_share_items, "percentage_share_items.csv", row.names = FALSE)
+
+```
+
+
+
+```{r}
+
+# Checking which store is driving the percentage
+
+x  <- group_by(store_data, week_ending) %>% mutate(percent = (units/sum(units)*100))
+
+y <- x[x$percent > 2,]
+
+# Ploting the store sales across time
+ggplot(y,aes(x=week_ending,y=percent,colour=store,group=store)) + 
+  geom_line() + 
+  xlab('Time') + 
+  ylab('Percentage Difference') + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 5))
+
+
+
+```
+
