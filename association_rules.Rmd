@@ -1,0 +1,351 @@
+---
+title: "Association Rules"
+author: "Suhas Alur"
+date: "December 2, 2016"
+output: pdf_document
+---
+
+```{r, include = FALSE, message = FALSE, warning = FALSE}
+# Loading required libraries
+library(RODBC)
+library(dplyr)
+library(ggplot2)
+library(AnomalyDetection)
+library(dplyr)
+dbHandle <- odbcDriverConnect('driver={SQL Server};server=localhost;database=CSOM_MSBA_ULDATA;trusted_connection=true')
+
+```
+
+
+
+#####=======================================================================================
+##### Association Rules - Target
+#####=======================================================================================
+
+
+
+```{r}
+
+# Obtaining data for Target
+target_data_arules <- sqlQuery(dbHandle, paste("SELECT *
+FROM [dbo].[t_WeeklySales]
+WHERE GEO = 'TARGET'"))
+
+
+```
+
+```{r}
+
+colnames(target_data_arules)
+
+```
+
+
+```{r}
+
+subset_target <- target_data_arules %>% 
+  select(WeekEnding, Attr1, Attr2, Units, Units_Feature, Units_Display, Units_TPR, Units_FeatAndDisp) 
+
+
+```
+
+
+```{r}
+
+target_arules_feature <- subset_target %>%
+  mutate(item = paste(Attr1," ",Attr2)) %>%
+  filter(Units > 10000 & (Units_Feature > 5000 | Units_Display > 5000 | Units_TPR > 5000 | Units_FeatAndDisp > 5000)) %>%
+  select(WeekEnding,item) %>%
+  group_by(WeekEnding,item) %>%
+  filter(row_number(item) == 1)
+
+write.csv(target_arules_feature,"D:/Group Folders/Gold/Group 5/Suhas/arules/target_arules_feature.csv",row.names = FALSE)
+
+
+```
+
+
+```{r}
+
+library(arules)
+target_arules_feature <- read.transactions(file="D:/Group Folders/Gold/Group 5/Suhas/arules/target_arules_feature.csv",format="single", sep=",", cols=c("WeekEnding","item"))
+
+
+```
+
+
+```{r}
+
+item_rules <- apriori(target_arules_feature, parameter = list(support=0.9, confidence = 0.75, minlen=2))
+
+```
+
+
+```{r}
+inspect(head(sort(item_rules, by="lift"),5))
+#inspect(sort(item_rules, by="lift")[1:10])
+#inspect(item_rules)
+
+```
+
+
+
+#####=======================================================================================
+##### Association Rules - Walmart
+#####=======================================================================================
+
+
+
+```{r}
+
+# Obtaining data for WALMART
+walmart_data_arules <- sqlQuery(dbHandle, paste("SELECT *
+FROM [dbo].[t_WeeklySales]
+WHERE GEO = 'WALMART'"))
+
+
+```
+
+```{r}
+
+colnames(walmart_data_arules)
+
+```
+
+
+```{r}
+
+subset_walmart <- walmart_data_arules %>% 
+  select(WeekEnding, Attr1, Attr2, Units, Units_Feature, Units_Display, Units_TPR, Units_FeatAndDisp) 
+
+
+```
+
+
+```{r}
+
+walmart_arules_feature <- subset_walmart %>%
+  mutate(item = paste(Attr1," ",Attr2)) %>%
+  filter(Units > 10000 & (Units_Feature > 5000 | Units_Display > 5000 | Units_TPR > 5000 | Units_FeatAndDisp > 5000)) %>%
+  select(WeekEnding,item) %>%
+  group_by(WeekEnding,item) %>%
+  filter(row_number(item) == 1)
+
+write.csv(walmart_arules_feature,"D:/Group Folders/Gold/Group 5/Suhas/arules/walmart_arules_feature.csv",row.names = FALSE)
+
+
+```
+
+
+```{r}
+
+library(arules)
+walmart_arules_feature <- read.transactions(file="D:/Group Folders/Gold/Group 5/Suhas/arules/walmart_arules_feature.csv",format="single", sep=",", cols=c("WeekEnding","item"))
+
+
+```
+
+
+```{r}
+
+item_rules <- apriori(walmart_arules_feature, parameter = list(support=0.9, confidence = 0.75, minlen=2))
+
+```
+
+
+```{r}
+inspect(head(sort(item_rules, by="lift"),5))
+#inspect(sort(item_rules, by="lift")[1:10])
+#inspect(item_rules)
+
+```
+
+
+```{r}
+
+rm(list = ls())
+
+```
+
+
+#####=======================================================================================
+##### Association Rules - US-FOOD
+#####=======================================================================================
+
+
+
+```{r, include = FALSE, message = FALSE, warning = FALSE}
+# Loading required libraries
+library(RODBC)
+library(dplyr)
+library(ggplot2)
+library(AnomalyDetection)
+library(dplyr)
+dbHandle <- odbcDriverConnect('driver={SQL Server};server=localhost;database=CSOM_MSBA_ULDATA;trusted_connection=true')
+
+```
+
+
+```{r}
+
+# Obtaining data for US-FOOD
+us_food_data_arules <- sqlQuery(dbHandle, paste("SELECT *
+FROM [dbo].[t_WeeklySales]
+WHERE GEO = 'US-FOOD'"))
+
+
+```
+
+```{r}
+
+colnames(us_food_data_arules)
+
+```
+
+
+```{r}
+
+subset_us_food <- us_food_data_arules %>% 
+  select(WeekEnding, Attr1, Attr2, Units, Units_Feature, Units_Display, Units_TPR, Units_FeatAndDisp) 
+
+
+```
+
+
+```{r}
+
+us_food_arules_feature <- subset_us_food %>%
+  mutate(item = paste(Attr1," ",Attr2)) %>%
+  filter(Units > 10000 & (Units_Feature > 5000 | Units_Display > 5000 | Units_TPR > 5000 | Units_FeatAndDisp > 5000)) %>%
+  select(WeekEnding,item) %>%
+  group_by(WeekEnding,item) %>%
+  filter(row_number(item) == 1)
+
+write.csv(us_food_arules_feature,"D:/Group Folders/Gold/Group 5/Suhas/arules/us_food_arules_feature.csv",row.names = FALSE)
+
+
+```
+
+
+```{r}
+
+library(arules)
+us_food_arules_feature <- read.transactions(file="D:/Group Folders/Gold/Group 5/Suhas/arules/us_food_arules_feature.csv",format="single", sep=",", cols=c("WeekEnding","item"))
+
+
+```
+
+
+```{r}
+
+item_rules <- apriori(us_food_arules_feature, parameter = list(support=0.9, confidence = 0.75, minlen=2))
+
+```
+
+
+```{r}
+inspect(head(sort(item_rules, by="lift"),5))
+#inspect(sort(item_rules, by="lift")[1:10])
+#inspect(item_rules)
+
+```
+
+
+```{r}
+
+rm(list = ls())
+
+```
+
+
+
+#####=======================================================================================
+##### Association Rules - Wakefern
+#####=======================================================================================
+
+
+
+```{r, include = FALSE, message = FALSE, warning = FALSE}
+# Loading required libraries
+library(RODBC)
+library(dplyr)
+library(ggplot2)
+library(AnomalyDetection)
+library(dplyr)
+dbHandle <- odbcDriverConnect('driver={SQL Server};server=localhost;database=CSOM_MSBA_ULDATA;trusted_connection=true')
+
+```
+
+
+```{r}
+
+# Obtaining data for WAKEFERN
+wakefern_data_arules <- sqlQuery(dbHandle, paste("SELECT *
+FROM [dbo].[t_WeeklySales]
+WHERE GEO = 'WAKEFERN'"))
+
+
+```
+
+```{r}
+
+colnames(wakefern_data_arules)
+
+```
+
+
+```{r}
+
+subset_wakefern <- wakefern_data_arules %>% 
+  select(WeekEnding, Attr1, Attr2, Units, Units_Feature, Units_Display, Units_TPR, Units_FeatAndDisp) 
+
+
+```
+
+
+```{r}
+
+wakefern_arules_feature <- subset_wakefern %>%
+  mutate(item = paste(Attr1," ",Attr2)) %>%
+  filter(Units > 10000 & (Units_Feature > 5000 | Units_Display > 5000 | Units_TPR > 5000 | Units_FeatAndDisp > 5000)) %>%
+  select(WeekEnding,item) %>%
+  group_by(WeekEnding,item) %>%
+  filter(row_number(item) == 1)
+
+write.csv(wakefern_arules_feature,"D:/Group Folders/Gold/Group 5/Suhas/arules/wakefern_arules_feature.csv",row.names = FALSE)
+
+
+```
+
+
+```{r}
+
+library(arules)
+wakefern_arules_feature <- read.transactions(file="D:/Group Folders/Gold/Group 5/Suhas/arules/wakefern_arules_feature.csv",format="single", sep=",", cols=c("WeekEnding","item"))
+
+
+```
+
+
+```{r}
+
+item_rules <- apriori(wakefern_arules_feature, parameter = list(support=0.9, confidence = 0.75, minlen=2))
+
+```
+
+
+```{r}
+inspect(head(sort(item_rules, by="lift"),5))
+#inspect(sort(item_rules, by="lift")[1:10])
+#inspect(item_rules)
+
+```
+
+
+```{r}
+
+rm(list = ls())
+
+```
+
+
